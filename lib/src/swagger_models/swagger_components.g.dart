@@ -25,8 +25,9 @@ SwaggerComponents _$SwaggerComponentsFromJson(Map<String, dynamic> json) =>
 
 Map<String, dynamic> _$SwaggerComponentsToJson(SwaggerComponents instance) =>
     <String, dynamic>{
-      'parameters': instance.parameters,
-      'schemas': instance.schemas,
-      'responses': instance.responses,
-      'requestBodies': instance.requestBodies,
+      'parameters': instance.parameters.map((k, e) => MapEntry(k, e.toJson())),
+      'schemas': instance.schemas.map((k, e) => MapEntry(k, e.toJson())),
+      'responses': instance.responses.map((k, e) => MapEntry(k, e.toJson())),
+      'requestBodies':
+          instance.requestBodies.map((k, e) => MapEntry(k, e.toJson())),
     };

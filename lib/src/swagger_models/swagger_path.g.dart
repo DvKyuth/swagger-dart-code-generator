@@ -21,6 +21,6 @@ SwaggerPath _$SwaggerPathFromJson(Map<String, dynamic> json) => SwaggerPath(
 
 Map<String, dynamic> _$SwaggerPathToJson(SwaggerPath instance) =>
     <String, dynamic>{
-      'requests': instance.requests,
-      'parameters': instance.parameters,
+      'requests': instance.requests.map((k, e) => MapEntry(k, e.toJson())),
+      'parameters': instance.parameters.map((e) => e.toJson()).toList(),
     };

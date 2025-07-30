@@ -26,9 +26,9 @@ Map<String, dynamic> _$SwaggerResponseToJson(SwaggerResponse instance) =>
       r'$ref': instance.ref,
       'description': instance.description,
       'type': instance.type,
-      'schema': instance.schema,
+      'schema': instance.schema?.toJson(),
       'enumValue': instance.enumValue,
-      'content': instance.content,
+      'content': instance.content?.toJson(),
     };
 
 Content _$ContentFromJson(Map<String, dynamic> json) => Content(
@@ -46,7 +46,7 @@ Content _$ContentFromJson(Map<String, dynamic> json) => Content(
 Map<String, dynamic> _$ContentToJson(Content instance) => <String, dynamic>{
       'responseType': instance.responseType,
       'type': instance.type,
-      'items': instance.items,
-      'schema': instance.schema,
+      'items': instance.items?.toJson(),
+      'schema': instance.schema?.toJson(),
       'ref': instance.ref,
     };

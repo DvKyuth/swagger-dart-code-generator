@@ -88,6 +88,7 @@ RequestContent? _contentFromJson(Map<String, dynamic>? map) {
       !map.containsKey('application/x-www-form-urlencoded')) {
     final multipart =
         map['multipart/form-data']['schema'] as Map<String, dynamic>;
+
     return RequestContent(
         isMultipart: true, schema: SwaggerSchema.fromJson(multipart));
   }

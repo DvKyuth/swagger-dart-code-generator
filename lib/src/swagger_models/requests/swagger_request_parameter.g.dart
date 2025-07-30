@@ -40,10 +40,10 @@ Map<String, dynamic> _$SwaggerRequestParameterToJson(
       'required': instance.isRequired,
       r'$ref': instance.ref,
       'type': instance.type,
-      'item': instance.item,
+      'item': instance.item?.toJson(),
       'enum': instance.enumValuesObj,
       'collectionFormat': instance.collectionFormat,
-      'schema': instance.schema,
-      'items': instance.items,
+      'schema': instance.schema?.toJson(),
+      'items': instance.items?.toJson(),
       'key': instance.key,
     };

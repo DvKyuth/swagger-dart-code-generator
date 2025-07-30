@@ -43,14 +43,16 @@ SwaggerRoot _$SwaggerRootFromJson(Map<String, dynamic> json) => SwaggerRoot(
 Map<String, dynamic> _$SwaggerRootToJson(SwaggerRoot instance) =>
     <String, dynamic>{
       'openapi': instance.openapiVersion,
-      'info': instance.info,
+      'info': instance.info?.toJson(),
       'host': instance.host,
       'basePath': instance.basePath,
-      'tags': instance.tags,
+      'tags': instance.tags.map((e) => e.toJson()).toList(),
       'schemes': instance.schemes,
-      'paths': instance.paths,
-      'definitions': instance.definitions,
-      'parameters': instance.parameters,
-      'components': instance.components,
-      'securityDefinitions': instance.securityDefinitions,
+      'paths': instance.paths.map((k, e) => MapEntry(k, e.toJson())),
+      'definitions':
+          instance.definitions.map((k, e) => MapEntry(k, e.toJson())),
+      'parameters': instance.parameters.map((k, e) => MapEntry(k, e.toJson())),
+      'components': instance.components?.toJson(),
+      'securityDefinitions':
+          instance.securityDefinitions.map((k, e) => MapEntry(k, e.toJson())),
     };

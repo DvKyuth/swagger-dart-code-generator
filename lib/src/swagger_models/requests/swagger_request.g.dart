@@ -46,10 +46,10 @@ Map<String, dynamic> _$SwaggerRequestToJson(SwaggerRequest instance) =>
       'operationId': instance.operationId,
       'consumes': instance.consumes,
       'produces': instance.produces,
-      'responses': instance.responses,
+      'responses': instance.responses.map((k, e) => MapEntry(k, e.toJson())),
       'security': instance.security,
-      'parameters': instance.parameters,
-      'requestBody': instance.requestBody,
+      'parameters': instance.parameters.map((e) => e.toJson()).toList(),
+      'requestBody': instance.requestBody?.toJson(),
     };
 
 RequestBody _$RequestBodyFromJson(Map<String, dynamic> json) => RequestBody(
@@ -59,7 +59,7 @@ RequestBody _$RequestBodyFromJson(Map<String, dynamic> json) => RequestBody(
 
 Map<String, dynamic> _$RequestBodyToJson(RequestBody instance) =>
     <String, dynamic>{
-      'content': instance.content,
+      'content': instance.content?.toJson(),
       r'$ref': instance.ref,
     };
 
@@ -74,7 +74,7 @@ RequestContent _$RequestContentFromJson(Map<String, dynamic> json) =>
 
 Map<String, dynamic> _$RequestContentToJson(RequestContent instance) =>
     <String, dynamic>{
-      'schema': instance.schema,
+      'schema': instance.schema?.toJson(),
       'isMultipart': instance.isMultipart,
       'isUrlencoded': instance.isUrlencoded,
     };

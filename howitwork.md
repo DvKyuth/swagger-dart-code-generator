@@ -1,0 +1,127 @@
+# How `swagger-dart-code-generator` Works
+
+This document provides a high-level overview of the internal workings of the `swagger-dart-code-generator` package. It's intended for developers who want to understand, customize, or contribute to the package.
+
+## Core Concept
+
+The package is a `build_runner` builder. It reads Swagger/OpenAPI specification files (v2 and v3, in JSON or YAML format) and generates a complete, type-safe Dart client library, primarily using the `chopper` package for HTTP communication and `json_serializable` for data serialization.
+
+## The Generation Pipeline
+
+The process can be broken down into several key stages, orchestrated by a series of generator classes.
+
+### 1. Entry Point: The Builder
+
+- **File:** `lib/swagger_dart_code_generator.dart`
+- **Class:** `SwaggerDartCodeGenerator`
+
+This class implements the `Builder` interface from the `build` package. It's the main entry point for the build process.
+
+- **`buildExtensions`**: This map tells `build_runner` which output files to generate for a given input. It's configured to produce:
+    - A main service file (`.swagger.dart`).
+    - An enums file (`.enums.swagger.dart`).
+    - A models file (`.models.swagger.dart`, if `separateModels` is enabled).
+    - An index file (`client_index.dart`) and a mapping file (`client_mapping.dart`) for the entire project.
+- **`build()`**: This is the core method executed by `build_runner`. It performs the following steps:
+    1.  Reads the input `.swagger`, `.json`, or `.yaml` file.
+    2.  Parses the content into a structured tree of Dart objects, with `SwaggerRoot` (`lib/src/swagger_models/swagger_root.dart`) as the root node. This tree represents the entire API specification.
+    3.  Initiates the code generation process by calling the main `SwaggerCodeGenerator`.
+
+### 2. Orchestration: The Main Generator
+
+- **File:** `lib/src/swagger_code_generator.dart`
+- **Class:** `SwaggerCodeGenerator`
+
+This class acts as a high-level orchestrator. It doesn't contain much generation logic itself but delegates tasks to specialized generators based on the OpenAPI version (v2 or v3).
+
+- It detects the API version from the `SwaggerRoot.openapiVersion` field.
+- It holds maps that point to the correct `V2` or `V3` implementation of the `SwaggerEnumsGenerator` and `SwaggerModelsGenerator`.
+- It calls the generators in a specific order: Enums -> Models -> Requests -> Additions.
+
+### 3. Generating Enums
+
+- **File:** `lib/src/code_generators/swagger_enums_generator.dart`
+- **Implementations:** `SwaggerEnumsGeneratorV2`, `SwaggerEnumsGeneratorV3`
+
+This generator is responsible for finding and creating Dart `enum` types.
+
+1.  **`generateAllEnums()`**: It traverses the entire `SwaggerRoot` object tree, looking for schemas, parameters, and properties that define an `enum`. This includes:
+    - Definitions/Components (`schemas`, `responses`, `requestBodies`).
+    - Request parameters (in path, query, header).
+    - Properties within models.
+2.  **`EnumModel`**: For each found enum, it creates an `EnumModel` (`lib/src/code_generators/enum_model.dart`). This model captures the enum's name, its values (and their JSON representation), and whether it's based on integers or strings.
+3.  **Code Generation**: The `EnumModel.toString()` method generates the final Dart `enum` code. It includes:
+    - The `enum` definition itself.
+    - `@JsonValue` annotations for each member to ensure correct serialization.
+    - A special `swaggerGeneratedUnknown` case to handle unexpected values from the API.
+4.  **Output**: The generated enum strings are collected and written to the `.enums.swagger.dart` file.
+
+### 4. Generating Models (Data Classes)
+
+- **File:** `lib/src/code_generators/swagger_models_generator.dart`
+- **Implementations:** `SwaggerModelsGeneratorV2`, `SwaggerModelsGeneratorV3`
+
+This is one of the most complex parts. It generates the Dart classes that represent the data structures of the API.
+
+1.  **Schema Traversal**: It iterates through all the schemas defined in `definitions` (V2) or `components/schemas` (V3). It also discovers schemas from responses and request bodies to generate necessary models.
+2.  **Property Generation**: For each schema, it generates properties:
+    - It determines the correct Dart type for each property (e.g., `String`, `int`, `bool`, `DateTime`, `List<T>`, or another generated model).
+    - It handles nullable types (`?`) based on the schema's `nullable` flag or the `required` list.
+    - It adds `@JsonKey` annotations with the original JSON `name` and other serialization options (`includeIfNull`, `defaultValue`).
+    - It generates special `fromJson`/`toJson` logic for enums and dates.
+3.  **Class Generation**: It assembles the properties into a full class definition:
+    - Adds the `@JsonSerializable` annotation.
+    - Creates a `const` constructor with all the properties.
+    - Generates the `fromJson` factory and `toJson` method, which delegate to the code generated by `json_serializable` (in the `.g.dart` file).
+    - Optionally generates `copyWith`, `==`, `hashCode`, and `toString` methods for value equality and convenience.
+4.  **Handling Complexity**: It correctly handles `allOf` (for inheritance), `List<T>`, nested objects (by creating inner classes), and `typedef` for simple type aliases.
+5.  **Output**: The generated model classes are either placed directly in the main `.swagger.dart` file or, if `separateModels: true` is set in the options, written to a separate `.models.swagger.dart` file.
+
+### 5. Generating Requests (The Chopper Client)
+
+- **File:** `lib/src/code_generators/swagger_requests_generator.dart`
+- **Class:** `SwaggerRequestsGenerator`
+
+This generator creates the `ChopperService` that you use to make API calls.
+
+1.  **Service Definition**: It creates an abstract class that extends `ChopperService`.
+2.  **Path Traversal**: It iterates through every path and HTTP method (GET, POST, etc.) defined in `paths`.
+3.  **Method Generation**: For each endpoint, it generates a corresponding Dart method:
+    - **Annotations**: It adds Chopper annotations like `@Get()`, `@Post()`, `@Path()`, `@Query()`, `@Body()`, `@Part()`, etc., based on the endpoint's definition.
+    - **Parameters**: It creates method parameters for each API parameter (path variables, query parameters, request bodies). Types are carefully resolved to match generated models or enums.
+    - **Return Type**: It determines the method's return type, like `Future<Response<MyModel>>` or `Future<Response<List<MyModel>>>`, by inspecting the `responses` section of the specification.
+    - **Method Name**: The method name is derived from the `operationId` or the request path itself.
+4.  **Client Factory**: It generates a static `create` method on the service class. This factory method configures and instantiates the `ChopperClient` with the correct base URL, converters, and the generated service.
+5.  **Output**: The final Chopper service class is written to the main `.swagger.dart` file.
+
+### 6. Generating Additional Files & Helpers
+
+- **File:** `lib/src/code_generators/swagger_additions_generator.dart`
+- **Class:** `SwaggerAdditionsGenerator`
+
+This generator creates miscellaneous helper files and code snippets needed by the rest of the generated code.
+
+- **`client_index.dart`**: An index file that exports all the generated Chopper services, making them easy to import from a single place.
+- **`client_mapping.dart`**: If `withConverter` is true, this file contains a map of `Type` to `fromJson` factories. This is used by a custom JSON converter to dynamically deserialize JSON into the correct model object, which is crucial for handling polymorphism or generic responses.
+- **Imports**: It generates all the necessary `import` and `part` directives in the output files.
+- **Helpers**: It generates utility code like a `_dateToJson` function and a custom `JsonConverter` class if needed.
+
+## Configuration
+
+- **File:** `lib/src/models/generator_options.dart`
+- **Class:** `GeneratorOptions`
+
+This class, along with its `g.dart` counterpart, defines all the possible configuration options you can set in your `build.yaml`. These options control nearly every aspect of the generation process, from file layout (`separateModels`) to naming (`modelPostfix`) and serialization behavior (`includeIfNull`).
+
+## Summary
+
+The end-to-end process is as follows:
+
+1.  `build_runner` invokes `SwaggerDartCodeGenerator`.
+2.  The generator parses the Swagger/OpenAPI file into `SwaggerRoot`.
+3.  `SwaggerCodeGenerator` orchestrates the process, selecting V2 or V3 generators.
+4.  `SwaggerEnumsGenerator` creates all `enum` types.
+5.  `SwaggerModelsGenerator` creates all data classes.
+6.  `SwaggerRequestsGenerator` creates the `ChopperService` for API calls.
+7.  `SwaggerAdditionsGenerator` creates helper files and boilerplate code.
+8.  The final, formatted Dart code is written to the output files in the specified output directory.

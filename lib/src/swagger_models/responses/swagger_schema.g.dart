@@ -70,15 +70,15 @@ Map<String, dynamic> _$SwaggerSchemaToJson(SwaggerSchema instance) =>
       r'$ref': instance.ref,
       'description': instance.description,
       'enum': instance.enumValuesObj,
-      'x-ms-enum': instance.msEnum,
+      'x-ms-enum': instance.msEnum?.toJson(),
       'required': instance.required,
-      'items': instance.items,
-      'properties': instance.properties,
+      'items': instance.items?.toJson(),
+      'properties': instance.properties.map((k, e) => MapEntry(k, e.toJson())),
       'nullable': instance.isNullable,
-      'schema': instance.schema,
-      'oneOf': instance.oneOf,
-      'anyOf': instance.anyOf,
-      'allOf': instance.allOf,
+      'schema': instance.schema?.toJson(),
+      'oneOf': instance.oneOf.map((e) => e.toJson()).toList(),
+      'anyOf': instance.anyOf.map((e) => e.toJson()).toList(),
+      'allOf': instance.allOf.map((e) => e.toJson()).toList(),
       'additionalProperties': instance.hasAdditionalProperties,
       'enumNames': instance.enumNames,
     };
@@ -91,7 +91,7 @@ MsEnum _$MsEnumFromJson(Map<String, dynamic> json) => MsEnum(
     );
 
 Map<String, dynamic> _$MsEnumToJson(MsEnum instance) => <String, dynamic>{
-      'values': instance.values,
+      'values': instance.values.map((e) => e.toJson()).toList(),
     };
 
 MsEnumValue _$MsEnumValueFromJson(Map<String, dynamic> json) => MsEnumValue(

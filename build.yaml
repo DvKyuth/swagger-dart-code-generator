@@ -12,3 +12,15 @@ builders:
     build_to: source
     auto_apply: dependents
     runs_before: ["chopper_generator", "json_serializable"]
+
+
+#targets:
+#  $default:
+#    builders:
+#      json_serializable:
+#        options:
+#          # Options configure how source code is generated for every
+#          # `@JsonSerializable`-annotated class in the package.
+#          #
+#          # The default value for each is listed.
+#          explicit_to_json: true

@@ -111,11 +111,12 @@ Map<String, dynamic> _$GeneratorOptionsToJson(GeneratorOptions instance) =>
       'multipart_file_type': instance.multipartFileType,
       'urlencoded_file_type': instance.urlencodedFileType,
       'with_converter': instance.withConverter,
-      'scalars': instance.scalars,
-      'overriden_models': instance.overridenModels,
+      'scalars': instance.scalars.map((k, e) => MapEntry(k, e.toJson())),
+      'overriden_models':
+          instance.overridenModels.map((e) => e.toJson()).toList(),
       'generate_to_json_for': instance.generateToJsonFor,
       'additional_headers': instance.additionalHeaders,
-      'input_urls': instance.inputUrls,
+      'input_urls': instance.inputUrls.map((e) => e.toJson()).toList(),
       'nullable_models': instance.nullableModels,
       'separate_models': instance.separateModels,
       'use_required_attribute_for_headers':
@@ -129,9 +130,12 @@ Map<String, dynamic> _$GeneratorOptionsToJson(GeneratorOptions instance) =>
       'cut_from_model_names': instance.cutFromModelNames,
       'build_only_models': instance.buildOnlyModels,
       'model_postfix': instance.modelPostfix,
-      'default_values_map': instance.defaultValuesMap,
-      'default_header_values_map': instance.defaultHeaderValuesMap,
-      'response_override_value_map': instance.responseOverrideValueMap,
+      'default_values_map':
+          instance.defaultValuesMap.map((e) => e.toJson()).toList(),
+      'default_header_values_map':
+          instance.defaultHeaderValuesMap.map((e) => e.toJson()).toList(),
+      'response_override_value_map':
+          instance.responseOverrideValueMap.map((e) => e.toJson()).toList(),
       'include_paths': instance.includePaths,
       'import_paths': instance.importPaths,
       'custom_return_type': instance.customReturnType,
