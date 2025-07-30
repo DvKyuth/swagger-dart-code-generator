@@ -13,7 +13,6 @@ import 'package:swagger_dart_code_generator/src/swagger_models/responses/swagger
 import 'package:swagger_dart_code_generator/src/swagger_models/responses/swagger_schema.dart';
 import 'package:swagger_dart_code_generator/src/swagger_models/swagger_path.dart';
 import 'package:swagger_dart_code_generator/src/swagger_models/swagger_root.dart';
-import 'package:talker_logger/talker_logger.dart';
 
 import 'constants.dart';
 
@@ -891,8 +890,6 @@ class SwaggerRequestsGenerator extends SwaggerGeneratorBase {
               ..annotations.add(
                 refer(kPartFile.pascalCase).call([literalString(key)]),
               ));
-
-            TalkerLogger().error(param);
 
             result.add(param);
           } else {
