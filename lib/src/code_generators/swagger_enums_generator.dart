@@ -156,7 +156,7 @@ ${allEnums.map((e) => e.toString()).join('\n')}
     swaggerRoot.paths.forEach((String path, SwaggerPath swaggerPath) {
       swaggerPath.requests
           .forEach((String requestType, SwaggerRequest swaggerRequest) {
-        final successResponses = SwaggerRequestsGenerator.getSuccessedResponses(
+        final successResponses = SwaggerRequestsGenerator.getSucceedResponses(
             responses: swaggerRequest.responses);
 
         for (final successResponse in successResponses) {

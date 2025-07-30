@@ -8,7 +8,6 @@ import 'package:swagger_dart_code_generator/src/swagger_models/requests/swagger_
 import 'package:swagger_dart_code_generator/src/swagger_models/requests/swagger_request_parameter.dart';
 import 'package:swagger_dart_code_generator/src/swagger_models/swagger_path.dart';
 import 'package:swagger_dart_code_generator/src/swagger_models/swagger_root.dart';
-import 'package:talker_logger/talker_logger.dart';
 
 abstract class SwaggerGeneratorBase {
   GeneratorOptions get options;
@@ -110,7 +109,6 @@ abstract class SwaggerGeneratorBase {
 
     //Link defined parameters with requests
     swaggerRoot.paths.forEach((String path, SwaggerPath swaggerPath) {
-      TalkerLogger().debug(swaggerPath.toJson());
       swaggerPath.requests.forEach((String req, SwaggerRequest swaggerRequest) {
         swaggerRequest.parameters = swaggerRequest.parameters
             .map((SwaggerRequestParameter parameter) =>

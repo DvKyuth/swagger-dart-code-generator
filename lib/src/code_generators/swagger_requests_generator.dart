@@ -13,6 +13,7 @@ import 'package:swagger_dart_code_generator/src/swagger_models/responses/swagger
 import 'package:swagger_dart_code_generator/src/swagger_models/responses/swagger_schema.dart';
 import 'package:swagger_dart_code_generator/src/swagger_models/swagger_path.dart';
 import 'package:swagger_dart_code_generator/src/swagger_models/swagger_root.dart';
+import 'package:talker_logger/talker_logger.dart';
 
 import 'constants.dart';
 
@@ -59,7 +60,7 @@ class SwaggerRequestsGenerator extends SwaggerGeneratorBase {
       swaggerRoot.basePath,
     );
 
-    return Class(
+    final classResult = Class(
       (c) => c
         ..methods.addAll([
           _generateCreateMethod(className, chopperClient),
@@ -71,6 +72,8 @@ class SwaggerRequestsGenerator extends SwaggerGeneratorBase {
         ..abstract = true
         ..name = className,
     );
+
+    return classResult;
   }
 
   Method _generateCreateMethod(String className, String body) {
@@ -173,7 +176,7 @@ class SwaggerRequestsGenerator extends SwaggerGeneratorBase {
           method: requestType,
           modelPostfix: options.modelPostfix,
           swaggerRoot: swaggerRoot,
-          overridenResponses: Map.fromEntries(
+          overwrittenResponses: Map.fromEntries(
             options.responseOverrideValueMap
                 .where((v) => v.method.isEmpty || v.method == requestType)
                 .map((v) => MapEntry(v.url, v)),
@@ -329,8 +332,7 @@ class SwaggerRequestsGenerator extends SwaggerGeneratorBase {
     }
 
     //Models from responses
-    final successResponses =
-        getSuccessedResponses(responses: request.responses);
+    final successResponses = getSucceedResponses(responses: request.responses);
     for (final successResponse in successResponses) {
       final responseRef = successResponse.anyRef;
 
@@ -502,7 +504,7 @@ class SwaggerRequestsGenerator extends SwaggerGeneratorBase {
     required bool isDeprecated,
     required bool includeNullQueryVars,
   }) {
-    return [
+    final result = [
       if (isDeprecated) refer('deprecated'),
       refer(requestType.toUpperCase()).call(
         [],
@@ -525,6 +527,8 @@ class SwaggerRequestsGenerator extends SwaggerGeneratorBase {
           {},
         ),
     ];
+
+    return result;
   }
 
   String _getCommentsForMethod({
@@ -761,7 +765,7 @@ class SwaggerRequestsGenerator extends SwaggerGeneratorBase {
 
     final securityParameters = swaggerRequest.security
         .map((e) => root.securityDefinitions[e])
-        .whereNotNull();
+        .nonNulls;
 
     final additionalHeaders =
         options.additionalHeaders.map((e) => SwaggerRequestParameter(
@@ -821,26 +825,27 @@ class SwaggerRequestsGenerator extends SwaggerGeneratorBase {
           schema = root.allSchemas[schema?.ref.getUnformattedRef()];
         }
 
-        // in case a scheme for the request is defined, we use only one param const kBody and the type of this param will be the scheme as class.
-        if (requestBody.content?.schema?.ref.isNotEmpty == true) {
-          result.add(
-            Parameter(
-              (p) => p
-                ..name = kBody
-                ..named = true
-                ..required = true
-                ..type = Reference(getValidatedClassName(
-                    requestBody.content!.schema!.ref.getRef()))
-                ..named = true
-                ..annotations.add(
-                  refer(kPart.pascalCase).call([]),
-                ),
-            ),
-          );
-
-          // early return
-          return result.distinctParameters();
-        }
+        // // in case a scheme for the request is defined, we use only one param const kBody and the type of this param will be the scheme as class.
+        // if (requestBody.content?.schema?.ref.isNotEmpty == true) {
+        //   for (var property in requestBody!.content?.schema!) {}
+        //   // result.add(
+        //   //   Parameter(
+        //   //     (p) => p
+        //   //       ..name = kBody
+        //   //       ..named = true
+        //   //       ..required = true
+        //   //       ..type = Reference(getValidatedClassName(
+        //   //           requestBody.content!.schema!.ref.getRef()))
+        //   //       ..named = true
+        //   //       ..annotations.add(
+        //   //         refer(kPart.pascalCase).call([]),
+        //   //       ),
+        //   //   ),
+        //   // );
+        //
+        //   // early return
+        //   return result.distinctParameters();
+        // }
 
         if (schema?.properties.isEmpty == true) {
           result.add(
@@ -865,6 +870,7 @@ class SwaggerRequestsGenerator extends SwaggerGeneratorBase {
           isBinary(SwaggerSchema? value) =>
               (value?.type == 'string' && value?.format == 'binary') ||
               value?.type == 'file';
+
           if ((isBinary(value) ||
               value.type == 'array' && isBinary(value.items))) {
             final isRequired =
@@ -877,18 +883,18 @@ class SwaggerRequestsGenerator extends SwaggerGeneratorBase {
               typeRef = 'List<$typeRef>';
             }
 
-            result.add(
-              Parameter(
-                (p) => p
-                  ..name = key
-                  ..named = true
-                  ..required = isRequired
-                  ..type = Reference(typeRef)
-                  ..annotations.add(
-                    refer(kPartFile.pascalCase).call([]),
-                  ),
-              ),
-            );
+            final param = Parameter((p) => p
+              ..name = key.replaceAll('[]', '')
+              ..named = true
+              ..required = isRequired
+              ..type = Reference(typeRef)
+              ..annotations.add(
+                refer(kPartFile.pascalCase).call([literalString(key)]),
+              ));
+
+            TalkerLogger().error(param);
+
+            result.add(param);
           } else {
             final typeName =
                 _mapParameterName(value.type, value.format, modelPostfix);
@@ -1093,13 +1099,13 @@ class SwaggerRequestsGenerator extends SwaggerGeneratorBase {
   }
 
   Code? _getHeaderDefaultValue(SwaggerRequestParameter swaggerParameter) {
-    final overridenValue = options.defaultHeaderValuesMap.firstWhereOrNull(
+    final overwrittenValue = options.defaultHeaderValuesMap.firstWhereOrNull(
         (map) =>
             map.headerName.toLowerCase() ==
             swaggerParameter.name.toLowerCase());
 
-    if (overridenValue != null) {
-      return Code('\'${overridenValue.defaultValue}\'');
+    if (overwrittenValue != null) {
+      return Code('\'${overwrittenValue.defaultValue}\'');
     }
 
     return null;
@@ -1120,7 +1126,7 @@ class SwaggerRequestsGenerator extends SwaggerGeneratorBase {
     return methodName;
   }
 
-  static List<SwaggerResponse> getSuccessedResponses({
+  static List<SwaggerResponse> getSucceedResponses({
     required Map<String, SwaggerResponse> responses,
   }) {
     return responses.entries
@@ -1354,18 +1360,18 @@ class SwaggerRequestsGenerator extends SwaggerGeneratorBase {
 
   String _getReturnTypeName({
     required Map<String, SwaggerResponse> responses,
-    required Map<String, ResponseOverrideValueMap> overridenResponses,
+    required Map<String, ResponseOverrideValueMap> overwrittenResponses,
     required String path,
     required String methodName,
     required String modelPostfix,
     required SwaggerRoot swaggerRoot,
     required String method,
   }) {
-    if (overridenResponses.containsKey(path)) {
-      return overridenResponses[path]!.overriddenValue;
+    if (overwrittenResponses.containsKey(path)) {
+      return overwrittenResponses[path]!.overriddenValue;
     }
 
-    final neededResponses = getSuccessedResponses(
+    final neededResponses = getSucceedResponses(
       responses: responses,
     );
 
@@ -1414,7 +1420,7 @@ class SwaggerRequestsGenerator extends SwaggerGeneratorBase {
     String basePath,
   ) {
     final baseUrlString = options.withBaseUrl
-        ? "baseUrl:  baseUrl ?? Uri.parse('http://$host$basePath')"
+        ? "baseUrl:  baseUrl ?? Uri.parse('https://$host$basePath')"
         : 'baseUrl: baseUrl';
 
     final converterString = options.withConverter
