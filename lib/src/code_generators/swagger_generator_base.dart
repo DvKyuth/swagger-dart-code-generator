@@ -158,6 +158,16 @@ abstract class SwaggerGeneratorBase {
 
     final correctedPath = getValidatedClassName(path);
 
-    return '${requestType.capitalize}${correctedPath.capitalize}'.camelCase;
+    String prefix = requestType.capitalize;
+
+    if (requestType.toUpperCase() == 'POST') {
+      prefix = 'request';
+    }
+
+    if (requestType.toUpperCase() == 'PUT') {
+      prefix = 'requestUpdate';
+    }
+
+    return '$prefix${correctedPath.capitalize}'.camelCase;
   }
 }
